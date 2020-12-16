@@ -29,68 +29,67 @@ service cloud.firestore {
 
     // Draft blog posts
     match /drafts/{draftID} {
-      // `title`: string, < 50 characters, required
       // `authorUID`: string, required
-      // `url`: string, required
-      // `createdAt`: timestamp, required
       // `content`: string, required
+      // `createdAt`: timestamp, required
+      // `title`: string, < 50 characters, required
+      // `url`: string, required
 
       allow create: if
-        // User creating document is draft author
+        // User is author
         request.auth.uid == request.resource.data.authorUID &&
         // Must include title, author, and createAt fields
         request.resource.data.keys().hasAll([
-          "title",
           "authorUID",
-          "createdAt"
+          "createdAt",
+          "title"
         ]) &&
         titleIsUnder50Chars(request.resource.data);
 
       allow update: if
-        // User is the author, and
+        // User is author
         resource.data.authorUID == request.auth.uid &&
-        // // `authorUID` and `createdAt` are unchanged
-        request.resource.data.diff(request.resource.data).unchangedKeys().hasAll(
-          [
-          "authorUID",
-          "createdAt"
-          ]
-        ) &&
+        // `authorUID` and `createdAt` are unchanged
+        request.resource.data.diff(request.resource.data).unchangedKeys().
+          hasAll([
+            "authorUID",
+            "createdAt"
+          ]) &&
         titleIsUnder50Chars(request.resource.data);
 
       // Can be read or deleted by author or moderator
       allow read, delete: if isAuthorOrModerator(resource.data, request.auth);
     }
 
-    // Published blog posts; moved into a different collection because every
-    // kind of access changes for published posts
+    // Published blog posts are denormalized from drafts
     match /published/{postID} {
-      // `title`: string, < 50 characters, required
       // `authorUID`: string, required
-      // `url`: string, required
-      // `publishedAt`: timestamp, required
       // `content`: string, required
+      // `publishedAt`: timestamp, required
+      // `title`: string, < 50 characters, required
+      // `url`: string, required
       // `visible`: boolean, required
 
       // Can be read by everyone
       allow read: if true;
 
-      // Users can't create published posts; drafts are published via functions,
-      // which bypasses security rules.
+      // Published posts are created only via functions, never by users
       // No hard deletes; soft deletes update `visible` field.
       allow create, delete: if false;
 
       // Can be updated by authors or moderators if all fields are still there
       allow update: if
         isAuthorOrModerator(resource.data, request.auth) &&
+        // Immutable fields are unchanged
         request.resource.data.diff(request.resource.data).unchangedKeys().hasAll([
-          "url",
           "authorUID",
-          "publishedAt"
+          "publishedAt",
+          "url"
         ]) &&
+        // Required fields are present
         request.resource.data.keys().hasAll([
-          "title",
           "content",
+          "title",
           "visible"
         ]) &&
         titleIsUnder50Chars(request.resource.data);
@@ -98,9 +97,9 @@ service cloud.firestore {
 
     match /published/{postID}/comments/{commentID} {
       // `authorUID`: string, required
+      // `comment`: string, < 500 characters, required
       // `createdAt`: timestamp, required
       // `editedAt`: timestamp, optional
-      // `comment`: string, < 500 characters, required
 
       // Must have permanent account to read comments
       allow read: if !(request.auth.token.firebase.sign_in_provider == "anonymous");
@@ -118,8 +117,7 @@ service cloud.firestore {
         // is author
         request.auth.uid == resource.data.authorUID &&
         // within an hour (3,600,000 millis) of comment creation
-        resource.data.createdAt >
-          (request.time.toMillis() - 3600000);
+        resource.data.createdAt > (request.time.toMillis() - 3600000);
 
       allow delete: if
         // is comment author
