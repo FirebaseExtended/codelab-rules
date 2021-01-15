@@ -1,13 +1,3 @@
----
-id: firestore-rules
-summary: Learn how to protect your Firestore data with Security Rules
-status: [hidden,draft]
-authors: Rachel Myers
-categories: Web
-tags: web
-
----
-
 # Protect your data with Firestore Security Rules
 
 ## Before you begin
@@ -38,7 +28,7 @@ You'll learn how to:
 ## Set up
 Duration: 04:00
 
-This is a blogging application. Here's a high level summary of the application functionality:
+You'll focus on the backend of a blogging application. Here's a high level summary of the app's functionality:
 
 **Draft blog posts:**
 * Users can create draft blog posts, which live in the `drafts` collection.
