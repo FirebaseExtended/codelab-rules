@@ -13,8 +13,7 @@
 // limitations under the License.
 
 const firebase = require("@firebase/rules-unit-testing");
-// const FIREBASE_PROJECT_ID = "rachelmyers-rules-codelab";
-const TEST_FIREBASE_PROJECT_ID = "codelab-dev-91532";
+const TEST_FIREBASE_PROJECT_ID = "codelab";
 
 const authorDb = firebase.initializeTestApp({
   projectId: TEST_FIREBASE_PROJECT_ID,
@@ -87,8 +86,8 @@ describe("Draft blog posts", () => {
 describe("Published blog posts", () => {
 
   it ("can be read by everyone; created or deleted by no one", async () => {
-    await firebase.assertSucceeds(everyoneDb.doc("published/12345").get());
-    await firebase.assertFails(authorDb.doc("published/23456").set({
+    await firebase.assertSucceeds(everyoneDb.doc("published/23456").get());
+    await firebase.assertFails(authorDb.doc("published/34567").set({
       title: "Best way to make bagels",
       authorUID: "author",
       url: "best-bagels",
@@ -96,12 +95,12 @@ describe("Published blog posts", () => {
       content: "There are no good bagels in the Bay Area. Except mine.",
       visible: true
     }));
-    await firebase.assertFails(authorDb.doc("published/23456").delete());
+    await firebase.assertFails(authorDb.doc("published/34567").delete());
   });
 
   it ("can be updated by author or moderator", async () => {
     after 
-    await firebase.assertSucceeds(authorDb.doc("published/12345").update({
+    await firebase.assertSucceeds(authorDb.doc("published/23456").update({
       title: "Best way to make upcakes",
       content: "Most cupcakes are just okay.",
       visible: true
@@ -112,11 +111,11 @@ describe("Published blog posts", () => {
 describe("Comments on published blog posts", () => {
   it ("can be read by anyone with a permanent account", async () => {
     await firebase.assertSucceeds(permanentUserDb.
-      doc("published/12345/comments/abcde").get());
+      doc("published/23456/comments/abcde").get());
   });
 
   it ("can be created if email is verfied and not blocked", async () => {
-    await firebase.assertSucceeds(commentatorDb.doc("published/12345/comments/bcdef").set({
+    await firebase.assertSucceeds(commentatorDb.doc("published/23456/comments/bcdef").set({
       "authorUID": "commentator",
       "createdAt": Date.now(),
       "comment": "I love cupcakes."
@@ -125,21 +124,21 @@ describe("Comments on published blog posts", () => {
 
   // Make these tests relislient to long test runs with Timecop or Timekeeper
   it ("can be updated by author for 1 hour after creation", async () => {
-  commentatorDb.doc("published/12345/comments/abcde").set({
+  commentatorDb.doc("published/23456/comments/cdefg").set({
     authorUID: "commentator",
     createdAt: Date.now(),
-    comment: "I like cupcakes, too!"
+    comment: "I like comments, too!"
   });
 
     await firebase.assertSucceeds(commentatorDb.
-      doc("published/12345/comments/abcde").update({
-        comment: "I really like cupcakes, too!",
+      doc("published/23456/comments/cdefg").update({
+        comment: "I like cupcakes, too!",
         editedAt: Date.now()
     }));
   });
 
   it ("can be deleted by an author or moderator", async () => {
     await firebase.assertSucceeds(commentatorDb.
-      doc("published/12345/comments/deleteMe").delete());
+      doc("published/23456/comments/deleteMe").delete());
   });
 });

@@ -30,10 +30,10 @@ service cloud.firestore {
     // Draft blog posts
     match /drafts/{draftID} {
       // `authorUID`: string, required
-      // `content`: string, required
+      // `content`: string, optional
       // `createdAt`: timestamp, required
       // `title`: string, < 50 characters, required
-      // `url`: string, required
+      // `url`: string, optional
 
       allow create: if
         // User is author
@@ -50,7 +50,7 @@ service cloud.firestore {
         // User is author
         resource.data.authorUID == request.auth.uid &&
         // `authorUID` and `createdAt` are unchanged
-        request.resource.data.diff(request.resource.data).unchangedKeys().
+        request.resource.data.diff(resource.data).unchangedKeys().
           hasAll([
             "authorUID",
             "createdAt"
