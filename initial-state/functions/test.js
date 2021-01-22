@@ -65,7 +65,7 @@ describe("Draft blog posts", () => {
     await firebase.assertSucceeds(authorDb.doc("drafts/new").set({
       title: "Make an app",
       authorUID: "author",
-      createdAt: Date.now()
+      createdAt: firebase.firestore.Timestamp.now()
     }));
   });
 
@@ -91,7 +91,7 @@ describe("Published blog posts", () => {
       title: "Best way to make bagels",
       authorUID: "author",
       url: "best-bagels",
-      publishedAt: Date.now(),
+      publishedAt: firebase.firestore.Timestamp.now(),
       content: "There are no good bagels in the Bay Area. Except mine.",
       visible: true
     }));
@@ -117,23 +117,25 @@ describe("Comments on published blog posts", () => {
   it ("can be created if email is verfied and not blocked", async () => {
     await firebase.assertSucceeds(commentatorDb.doc("published/23456/comments/bcdef").set({
       "authorUID": "commentator",
-      "createdAt": Date.now(),
+      "createdAt": firebase.firestore.Timestamp.now(),
       "comment": "I love cupcakes."
     }));
   });
 
-  // Make these tests relislient to long test runs with Timecop or Timekeeper
+  // Make these tests resilient to long test runs with Timecop or Timekeeper
   it ("can be updated by author for 1 hour after creation", async () => {
-  commentatorDb.doc("published/23456/comments/cdefg").set({
+    // Note that Timestamp is available from `@firebase/rules-unit-testing`,
+    // not from `initializeTestApp`
+    commentatorDb.doc("published/23456/comments/cdefg").set({
     authorUID: "commentator",
-    createdAt: Date.now(),
+    createdAt: firebase.firestore.Timestamp.now(),
     comment: "I like comments, too!"
   });
 
     await firebase.assertSucceeds(commentatorDb.
       doc("published/23456/comments/cdefg").update({
         comment: "I like cupcakes, too!",
-        editedAt: Date.now()
+        editedAt: firebase.firestore.Timestamp.now()
     }));
   });
 

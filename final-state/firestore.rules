@@ -1,16 +1,16 @@
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+-// Copyright 2019 Google LLC
+-//
+-// Licensed under the Apache License, Version 2.0 (the "License");
+-// you may not use this file except in compliance with the License.
+-// You may obtain a copy of the License at
+-//
+-//     https://www.apache.org/licenses/LICENSE-2.0
+-//
+-// Unless required by applicable law or agreed to in writing, software
+-// distributed under the License is distributed on an "AS IS" BASIS,
+-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-// See the License for the specific language governing permissions and
+-// limitations under the License.
 
 rules_version = '2';
 service cloud.firestore {
@@ -38,7 +38,7 @@ service cloud.firestore {
       allow create: if
         // User is author
         request.auth.uid == request.resource.data.authorUID &&
-        // Must include title, author, and createAt fields
+        // Must include title, author, and createdAt fields
         request.resource.data.keys().hasAll([
           "authorUID",
           "createdAt",
@@ -50,10 +50,9 @@ service cloud.firestore {
         // User is author
         resource.data.authorUID == request.auth.uid &&
         // `authorUID` and `createdAt` are unchanged
-        request.resource.data.diff(resource.data).unchangedKeys().
-          hasAll([
-            "authorUID",
-            "createdAt"
+        request.resource.data.diff(resource.data).unchangedKeys().hasAll([
+          "authorUID",
+          "createdAt"
           ]) &&
         titleIsUnder50Chars(request.resource.data);
 
@@ -77,11 +76,10 @@ service cloud.firestore {
       // No hard deletes; soft deletes update `visible` field.
       allow create, delete: if false;
 
-      // Can be updated by authors or moderators if all fields are still there
       allow update: if
         isAuthorOrModerator(resource.data, request.auth) &&
         // Immutable fields are unchanged
-        request.resource.data.diff(request.resource.data).unchangedKeys().hasAll([
+        request.resource.data.diff(resource.data).unchangedKeys().hasAll([
           "authorUID",
           "publishedAt",
           "url"
@@ -97,9 +95,9 @@ service cloud.firestore {
 
     match /published/{postID}/comments/{commentID} {
       // `authorUID`: string, required
-      // `comment`: string, < 500 characters, required
       // `createdAt`: timestamp, required
       // `editedAt`: timestamp, optional
+      // `comment`: string, < 500 characters, required
 
       // Must have permanent account to read comments
       allow read: if !(request.auth.token.firebase.sign_in_provider == "anonymous");
@@ -110,22 +108,19 @@ service cloud.firestore {
         // Comment is under 500 charachters
         request.resource.data.comment.size() < 500 &&
         // UID is not on the block list
-        // Use ternary operator to coerce result of `!exists(<path>)` to boolean
-        exists(/databases/$(database)/documents/blocklist/$(request.auth.uid)) ? false : true;
+        !exists(/databases/$(database)/documents/bannedUsers/$(request.auth.uid));
 
       allow update: if
         // is author
         request.auth.uid == resource.data.authorUID &&
-        // within an hour (3,600,000 millis) of comment creation
-        resource.data.createdAt > (request.time.toMillis() - 3600000);
+        // within an hour of comment creation
+        (request.time - resource.data.createdAt) < duration.value(1, 'h');
 
       allow delete: if
-        // is comment author
-        request.auth.uid == resource.data.authorUID ||
-        // is moderator
-        request.auth.token.isModerator == true ||
+        // is comment author or moderator
+        isAuthorOrModerator(resource.data, request.auth) ||
         // is blog post author
-        request.auth.uid == get(/databases/$(database)/documents/published/$(postID));
+        request.auth.uid == get(/databases/$(database)/documents/published/$(postID)).data.authorUID;
     }
   }
 }
