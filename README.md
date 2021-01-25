@@ -1,7 +1,7 @@
 ## How to use this repository
 
 This repository is meant to be used with the [Rules
-Codelab](), which is also dupicated in this repo[https://github.com/firebase/codelab-rules/blob/main/index.lab.md].
+Codelab](https://firebase.google.com/learn/codelabs/firebase-rules#0), which is also dupicated in this [repo](https://github.com/firebase/codelab-rules/blob/main/index.lab.md).
 
 There are two folders in this respository, `initial-state` and
 `final-state`. To walk through the codelab, clone down the project,
@@ -16,4 +16,3 @@ Please read and follow the steps in the [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 See [LICENSE](LICENSE)
-
