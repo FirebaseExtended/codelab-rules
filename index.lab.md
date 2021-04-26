@@ -1,3 +1,13 @@
+---
+id: firestore-rules
+summary: Learn how to protect your Firestore data with Security Rules
+status: [hidden, draft]
+authors: Rachel Myers
+categories: Web, Firebase, Firestore, Security Rules
+tags: web, firebase, firestore, security-rules
+
+---
+
 # Protect your data with Firestore Security Rules
 
 ## Before you begin
@@ -783,7 +793,7 @@ Rerun the tests, and make sure one more test passes.
 ## Updating comments: Time-based rules
 Duration: 05:00
 
-The business logic within a comment is that it can be edited by the comment author for a hour after creation. To implement this, use the `createdAt` timestamp.
+The business logic for comments is that they can be edited by the comment author for a hour after creation. To implement this, use the `createdAt` timestamp.
 
 First, to establish that the user is the author:
 
@@ -854,21 +864,21 @@ service cloud.firestore {
     }
 
     function titleIsUnder50Chars(post) {
-      return post.title.size < 50;
+      return post.title.size() < 50;
     }
 
     // Draft blog posts
     match /drafts/{draftID} {
       // `authorUID`: string, required
-      // `content`: string, required
+      // `content`: string, optional
       // `createdAt`: timestamp, required
       // `title`: string, < 50 characters, required
-      // `url`: string, required
+      // `url`: string, optional
 
       allow create: if
-        // User creating document is draft author
+        // User is author
         request.auth.uid == request.resource.data.authorUID &&
-        // Must include title, author, and url fields
+        // Must include title, author, and createdAt fields
         request.resource.data.keys().hasAll([
           "authorUID",
           "createdAt",
@@ -877,7 +887,7 @@ service cloud.firestore {
         titleIsUnder50Chars(request.resource.data);
 
       allow update: if
-        // User is the author, and
+        // User is author
         resource.data.authorUID == request.auth.uid &&
         // `authorUID` and `createdAt` are unchanged
         request.resource.data.diff(resource.data).unchangedKeys().hasAll([
@@ -966,5 +976,3 @@ Here are some related topics to dive into next:
 * [Blog post](https://firebase.googleblog.com/2021/01/code-review-security-rules.html): How to code review Security Rules
 * [Codelab](https://codelabs.developers.google.com/firebase-emulator#0): walking through local first development with the Emulators
 * [Video](https://www.youtube.com/watch?v=VgQwlMtxbAw): How to use set up CI for emulator-based tests using GitHub Actions
-
-
