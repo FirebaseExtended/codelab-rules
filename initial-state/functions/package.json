@@ -11,10 +11,10 @@
     "test": "mocha"
   },
   "engines": {
-    "node": "^13.7.0"
+    "node": "10"
   },
   "dependencies": {
-    "file-system": "^2.2.2",
+    "file-system": "^1.2.2",
     "firebase-admin": "^9.0.0",
     "firebase-functions": "^3.12.0"
   },
