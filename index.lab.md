@@ -91,7 +91,7 @@ Next, confirm that you have the latest version of the CLI.  This codelab should 
 
 ```console
 $ firebase --version
-9.2.0
+9.10.2
 ```
 
 ## Run the tests
@@ -229,7 +229,7 @@ request.resource.data.keys().hasAll([
 
 The final requirement for creating a blog post is that the title can't be more than 50 characters long:
 ```
-request.resource.data.title.size < 50
+request.resource.data.title.size() < 50
 
 ```
 
@@ -256,7 +256,7 @@ service cloud.firestore {
           "title"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
     }
   }
 }
@@ -280,7 +280,7 @@ request.resource.data.diff(resource.data).unchangedKeys().hasAll([
 ```
 And finally, the title should be 50 characters or fewer:
 ```
-request.resource.data.title.size < 50;
+request.resource.data.title.size() < 50;
 ```
 
 Since these conditions all need to be met, concatenate them together with `&&`:
@@ -295,7 +295,7 @@ allow update: if
     "createdAt"
   ]) &&
   // Title must be < 50 characters long
-  request.resource.data.title.size < 50;
+  request.resource.data.title.size() < 50;
 ```
 
 The complete rules become:
@@ -320,7 +320,7 @@ service cloud.firestore {
           "title"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
 
       allow update: if
         // User is the author, and
@@ -331,7 +331,7 @@ service cloud.firestore {
           "createdAt"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
     }
   }
 }
@@ -394,7 +394,7 @@ service cloud.firestore {
           "title"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
 
       allow update: if
         // User is the author, and
@@ -405,7 +405,7 @@ service cloud.firestore {
           "createdAt"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
 
       allow read, delete: if
         // User is draft author
@@ -474,7 +474,7 @@ service cloud.firestore {
           "title"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
 
       allow update: if
         // User is the author, and
@@ -485,7 +485,7 @@ service cloud.firestore {
           "createdAt"
         ]) &&
         // Title must be < 50 characters long
-        request.resource.data.title.size < 50;
+        request.resource.data.title.size() < 50;
 
       allow read, delete: if
         // User is draft author
@@ -636,7 +636,7 @@ service cloud.firestore {
     }
 
     function titleIsUnder50Chars(post) {
-      return post.title.size < 50;
+      return post.title.size() < 50;
     }
 
     // Draft blog posts
@@ -768,24 +768,109 @@ allow create: if
   !(exists(/databases/$(database)/documents/bannedUsers/$(request.auth.uid));
 ```
 
-The rules for comments are now:
+The entire rules file is now:
 ```
-match /published/{postID}/comments/{commentID} {
-  // `authorUID`: string, required
-  // `createdAt`: timestamp, required
-  // `editedAt`: timestamp, optional
-  // `comment`: string, < 500 characters, required
+For bottom of step 9
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-  // Must have permanent account to read comments
-  allow read: if !(request.auth.token.firebase.sign_in_provider == "anonymous");
+    // Returns true if user is post author or a moderator
+    function isAuthorOrModerator(post, auth) {
+      let isAuthor = auth.uid == post.authorUID;
+      let isModerator = auth.token.isModerator == true;
+      return isAuthor || isModerator;
+    }
 
-  allow create: if
-    // User has verified email
-    request.auth.token.email_verified == true &&
-    // Comment is under 500 charachters
-    request.resource.data.comment.size() < 500 &&
-    // UID is not on the block list
-    !(exists(/databases/$(database)/documents/bannedUsers/$(request.auth.uid));
+    function titleIsUnder50Chars(post) {
+      return post.title.size() < 50;
+    }
+
+    // Draft blog posts
+    match /drafts/{draftID} {
+      // `authorUID`: string, required
+      // `content`: string, optional
+      // `createdAt`: timestamp, required
+      // `title`: string, < 50 characters, required
+      // `url`: string, optional
+
+      allow create: if
+        // User is author
+        request.auth.uid == request.resource.data.authorUID &&
+        // Must include title, author, and createdAt fields
+        request.resource.data.keys().hasAll([
+          "authorUID",
+          "createdAt",
+          "title"
+        ]) &&
+        titleIsUnder50Chars(request.resource.data);
+
+      allow update: if
+        // User is author
+        resource.data.authorUID == request.auth.uid &&
+        // `authorUID` and `createdAt` are unchanged
+        request.resource.data.diff(resource.data).unchangedKeys().hasAll([
+          "authorUID",
+          "createdAt"
+          ]) &&
+        titleIsUnder50Chars(request.resource.data);
+
+      // Can be read or deleted by author or moderator
+      allow read, delete: if isAuthorOrModerator(resource.data, request.auth);
+    }
+
+    // Published blog posts are denormalized from drafts
+    match /published/{postID} {
+      // `authorUID`: string, required
+      // `content`: string, required
+      // `publishedAt`: timestamp, required
+      // `title`: string, < 50 characters, required
+      // `url`: string, required
+      // `visible`: boolean, required
+
+      // Can be read by everyone
+      allow read: if true;
+
+      // Published posts are created only via functions, never by users
+      // No hard deletes; soft deletes update `visible` field.
+      allow create, delete: if false;
+
+      allow update: if
+        isAuthorOrModerator(resource.data, request.auth) &&
+        // Immutable fields are unchanged
+        request.resource.data.diff(resource.data).unchangedKeys().hasAll([
+          "authorUID",
+          "publishedAt",
+          "url"
+        ]) &&
+        // Required fields are present
+        request.resource.data.keys().hasAll([
+          "content",
+          "title",
+          "visible"
+        ]) &&
+        titleIsUnder50Chars(request.resource.data);
+    }
+
+    match /published/{postID}/comments/{commentID} {
+      // `authorUID`: string, required
+      // `createdAt`: timestamp, required
+      // `editedAt`: timestamp, optional
+      // `comment`: string, < 500 characters, required
+
+      // Must have permanent account to read comments
+      allow read: if !(request.auth.token.firebase.sign_in_provider == "anonymous");
+
+      allow create: if
+        // User has verified email
+        request.auth.token.email_verified == true &&
+        // Comment is under 500 charachters
+        request.resource.data.comment.size() < 500 &&
+        // UID is not on the block list
+        !exists(/databases/$(database)/documents/bannedUsers/$(request.auth.uid));
+    }
+  }
+}
 ```
 
 Rerun the tests, and make sure one more test passes.
