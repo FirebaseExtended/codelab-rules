@@ -1,7 +1,7 @@
 ---
 id: firestore-rules
 summary: Learn how to protect your Firestore data with Security Rules
-status: [hidden, draft]
+status: [published]
 authors: Rachel Myers
 categories: Web, Firebase, Firestore, Security Rules
 tags: web, firebase, firestore, security-rules
