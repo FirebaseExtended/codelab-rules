@@ -1,7 +1,7 @@
 ---
 id: firestore-rules
 summary: Learn how to protect your Firestore data with Security Rules
-status: [hidden, draft]
+status: [published]
 authors: Rachel Myers
 categories: Web, Firebase, Firestore, Security Rules
 tags: web, firebase, firestore, security-rules
@@ -64,7 +64,7 @@ Everything will happen locally, using the Firebase Emulator Suite.
 In this codelab, you'll start off with tests for the Security Rules, but mimimal Security Rules themselves, so the first thing you need to do is clone the source to run the tests:
 
 ```console
-$ git clone https://github.com/firebase/codelab-rules.git
+$ git clone https://github.com/FirebaseExtended/codelab-rules.git
 ```
 
 Then move into the initial-state directory, where you will work for the remainder of this codelab:
