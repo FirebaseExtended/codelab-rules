@@ -22,7 +22,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: preview
-          path: steps/firebase-android/
+          path: steps/firebase-rules/
       - uses: actions/upload-artifact@v2
         with:
           name: pr

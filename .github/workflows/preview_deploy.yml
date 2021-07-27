@@ -41,12 +41,12 @@ jobs:
             });
             var fs = require('fs');
             fs.writeFileSync('${{github.workspace}}/pr.zip', Buffer.from(downloadPr.data));
-            fs.writeFileSync('${{github.workspace}}/firebase-android.zip', Buffer.from(downloadPreview.data));
+            fs.writeFileSync('${{github.workspace}}/firebase-rules.zip', Buffer.from(downloadPreview.data));
       - run: |
           unzip pr.zip
           echo "pr_number=$(cat NR)" >> $GITHUB_ENV
-          mkdir firebase-android
-          unzip firebase-android.zip -d firebase-android
+          mkdir firebase-rules
+          unzip firebase-rules.zip -d firebase-rules
       - name: Deploy preview
         id: deploy_preview
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -54,7 +54,7 @@ jobs:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIR_CODELABS_89252 }}'
           projectId: fir-codelabs-89252
-          entryPoint: firebase-android
+          entryPoint: firebase-rules
           channelId: ${{ env.pr_number }}
         env:
           FIREBASE_CLI_PREVIEWS: hostingchannels
