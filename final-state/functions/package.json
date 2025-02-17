@@ -25,7 +25,7 @@
     "eslint-plugin-promise": "^4.0.1",
     "firebase-admin": "^9.0.0",
     "firebase-functions-test": "^0.1.7",
-    "mocha": "^8.2.1"
+    "mocha": "^11.1.0"
   },
   "private": true
 }
